@@ -33,3 +33,8 @@ A task added to Asana must have a name. Both an assignee and a project are optio
     asana: ship some code #bugs
     asana: @travis ship some code
     asana: @steve ship some code #bugs
+
+To list tasks:
+
+    asana-tasks:
+    asana-tasks: @travis

@@ -50,6 +50,8 @@ addTask = (msg, api_key, params) ->
 
 getAssignee = (msg, api_key, assignee_name, callback) ->
   return callback({success: false}) if assignee_name == undefined
+  return callback({success: true, assignee_id: 'me' }) if assignee_name == 'me'
+
   assignee_name = assignee_name.replace "@", ""
   getRequest msg, '/users', api_key, (err, res, body) ->
     response = JSON.parse body
@@ -77,6 +79,12 @@ getProject = (msg, api_key, project_name, callback) ->
     if matches > 1
       msg.send "Too many projects match, adding to #{default_project_name}. Please move it to the project you meant."
     callback({success: false})
+
+getTasks = (msg, api_key, assignee_id, callback) ->
+  # Note: the completed_since=2999 is hack to get not completed tasks
+  getRequest msg, "/tasks?workspace=#{workspace_id}&assignee=#{assignee_id}&&completed_since=2999-01-01T00:00:00.000Z", api_key, (err, res, body) ->
+    response = JSON.parse body
+    return callback({success: true, tasks: response.data})
 
 module.exports = (robot) ->
   robot.respond /asana: (.*)$/i, (msg) ->
@@ -108,5 +116,22 @@ module.exports = (robot) ->
             params.data.projects = [data.project_id]
 
           addTask msg, api_key, params
+    else
+      msg.send "I need your Asana API key (click your name on the bottom left, then Apps). Send it to me in a 1-1 like this: 'asana: Zfxdag4s...'"
+
+
+  robot.hear /^asana-tasks:\s?(@\w+)?/i, (msg) ->
+    api_key = robot.brain.get("asana_api_key_#{msg.message.user.name}")
+    if api_key
+      username = msg.match[1] ? msg.message.user.name
+      assignee_name = msg.match[1] ? 'me'
+
+      getAssignee msg, api_key, assignee_name, (data) ->
+        if data.success
+
+          getTasks msg, api_key, data.assignee_id, (data) ->
+            if data.success
+              taskMessages = data.tasks.map (task) -> "- #{task.name}"
+              msg.send "#{username} have following tasks in progress:\n" + taskMessages.join('\n')
     else
       msg.send "I need your Asana API key (click your name on the bottom left, then Apps). Send it to me in a 1-1 like this: 'asana: Zfxdag4s...'"

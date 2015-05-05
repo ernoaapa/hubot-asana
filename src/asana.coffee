@@ -12,6 +12,7 @@
 #
 # Commands:
 #   asana: @<name> <task name> #<project> -- Add task to asana with optional @assignee and #project.
+#   asana-tasks: @<name> -- List uncompleted tasks in Asana by optional @assignee.
 #
 # Author:
 #   gumroad
